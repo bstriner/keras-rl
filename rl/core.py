@@ -189,11 +189,19 @@ class Agent(object):
         history = History()
         callbacks += [history]
         callbacks = CallbackList(callbacks)
-        callbacks._set_model(self)
+        if hasattr(callbacks, '_set_model'):
+            callbacks._set_model(self)
+        else:
+            callbacks.set_model(self)
         callbacks._set_env(env)
-        callbacks._set_params({
-            'nb_episodes': nb_episodes,
-        })
+        if hasattr(callbacks, '_set_params'):
+            callbacks._set_params({
+                'nb_episodes': nb_episodes,
+            })
+        else:
+            callbacks.set_params({
+                'nb_episodes': nb_episodes,
+            })
 
         self._on_test_begin()
         callbacks.on_train_begin()
