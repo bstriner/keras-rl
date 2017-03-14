@@ -28,7 +28,7 @@ ENV_NAME = 'Pendulum-v0'
 
 
 def main(argv):
-    default_nch = 64
+    default_nch = 256
     default_path = 'cdqn_{}_weights.h5f'.format(ENV_NAME)
 
     parser = argparse.ArgumentParser(description='Train CDQN on Pendulum-v0 environment.')
@@ -103,7 +103,7 @@ def main(argv):
         # Okay, now it's time to learn something! We visualize the training here for show, but this
         # slows down training quite a lot. You can always safely abort the training prematurely using
         # Ctrl + C.
-        agent.fit(env, nb_steps=50000, visualize=args.visualize, verbose=2, nb_max_episode_steps=200)
+        agent.fit(env, nb_steps=100000, visualize=args.visualize, verbose=2, nb_max_episode_steps=200)
 
         # After training is done, we save the final weights.
         agent.save_weights(args.model, overwrite=True)
