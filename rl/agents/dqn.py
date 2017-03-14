@@ -375,19 +375,16 @@ class NAFLayer(Layer):
                 import theano.tensor as T
                 import theano
 
-                def fn(x, L_acc, LT_acc):
+                def fn(x_tri, _):
                     x_ = K.zeros((self.nb_actions, self.nb_actions))
-                    x_ = T.set_subtensor(x_[np.tril_indices(self.nb_actions)], x)
-                    diag = K.exp(T.diag(x_) + K.epsilon())
-                    x_ = T.set_subtensor(x_[np.diag_indices(self.nb_actions)], diag)
-                    return x_, x_.T
+                    x_ = T.set_subtensor(x_[np.tril_indices(self.nb_actions)], x_tri)
+                    x_ = T.dot(x_, x_.T) + (K.epsilon()*T.eye(self.nb_actions))
+                    return x_
 
                 outputs_info = [
-                    K.zeros((self.nb_actions, self.nb_actions)),
-                    K.zeros((self.nb_actions, self.nb_actions)),
+                    K.zeros((self.nb_actions, self.nb_actions))
                 ]
-                results, _ = theano.scan(fn=fn, sequences=L_flat, outputs_info=outputs_info)
-                L, LT = results
+                P, _ = theano.scan(fn=fn, sequences=L_flat, outputs_info=outputs_info)
             elif K.backend() == 'tensorflow':
                 import tensorflow as tf
 
@@ -445,11 +442,10 @@ class NAFLayer(Layer):
                     # Old TensorFlow < 0.10 returns a shared tensor.
                     L = tmp[:, 0, :, :]
                     LT = tmp[:, 1, :, :]
+                P = K.batch_dot(L, LT)
             else:
                 raise RuntimeError('Unknown Keras backend "{}".'.format(K.backend()))
-            assert L is not None
-            assert LT is not None
-            P = K.batch_dot(L, LT)
+            assert P is not None
         elif self.mode == 'diag':
             if K.backend() == 'theano':
                 import theano.tensor as T
@@ -607,7 +603,7 @@ class ContinuousDQNAgent(AbstractDQNAgent):
             noise = self.random_process.sample()
             assert noise.shape == action.shape
             action += noise
-
+        assert np.all(np.isfinite(action))
         return action
 
     def forward(self, observation):
@@ -620,6 +616,7 @@ class ContinuousDQNAgent(AbstractDQNAgent):
         # Book-keeping.
         self.recent_observation = observation
         self.recent_action = action
+        assert np.all(np.isfinite(action))
 
         return action
 
